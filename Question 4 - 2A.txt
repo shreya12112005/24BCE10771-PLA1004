@@ -1,0 +1,51 @@
+import java.util.*;
+
+public class Main {
+
+    static class Round {
+        String name;
+        int score;
+
+        Round(String name, int score) {
+            this.name = name;
+            this.score = score;
+        }
+    }
+
+    public static void main(String[] args) {
+        Scanner sc = new Scanner(System.in);
+
+        int n = sc.nextInt();
+
+        ArrayList<Round> rounds = new ArrayList<>();
+        HashMap<String, Integer> finalScore = new HashMap<>();
+
+        // First pass: calculate final scores
+        for (int i = 0; i < n; i++) {
+            String name = sc.next();
+            int score = sc.nextInt();
+
+            rounds.add(new Round(name, score));
+            finalScore.put(name, finalScore.getOrDefault(name, 0) + score);
+        }
+
+        int maxScore = Integer.MIN_VALUE;
+
+        for (int score : finalScore.values()) {
+            maxScore = Math.max(maxScore, score);
+        }
+
+        // Second pass: find first player reaching maxScore
+        HashMap<String, Integer> currentScore = new HashMap<>();
+
+        for (Round r : rounds) {
+            currentScore.put(r.name, currentScore.getOrDefault(r.name, 0) + r.score);
+
+            if (currentScore.get(r.name) >= maxScore &&
+                finalScore.get(r.name) == maxScore) {
+                System.out.println(r.name);
+                return;
+            }
+        }
+    }
+}

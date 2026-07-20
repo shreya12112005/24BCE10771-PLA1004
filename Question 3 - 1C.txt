@@ -1,0 +1,73 @@
+import java.util.*;
+
+public class Main {
+
+    static final double PI = Math.PI;
+    static final double EPS = 1e-5;
+
+    static class Point {
+        double x, y;
+
+        Point(double x, double y) {
+            this.x = x;
+            this.y = y;
+        }
+    }
+
+    static double dist(Point a, Point b) {
+        return Math.hypot(a.x - b.x, a.y - b.y);
+    }
+
+    public static void main(String[] args) {
+        Scanner sc = new Scanner(System.in);
+
+        Point A = new Point(sc.nextDouble(), sc.nextDouble());
+        Point B = new Point(sc.nextDouble(), sc.nextDouble());
+        Point C = new Point(sc.nextDouble(), sc.nextDouble());
+
+        // Circumcenter
+        double d = 2 * (A.x * (B.y - C.y) + B.x * (C.y - A.y) + C.x * (A.y - B.y));
+
+        double ux = ((A.x * A.x + A.y * A.y) * (B.y - C.y)
+                + (B.x * B.x + B.y * B.y) * (C.y - A.y)
+                + (C.x * C.x + C.y * C.y) * (A.y - B.y)) / d;
+
+        double uy = ((A.x * A.x + A.y * A.y) * (C.x - B.x)
+                + (B.x * B.x + B.y * B.y) * (A.x - C.x)
+                + (C.x * C.x + C.y * C.y) * (B.x - A.x)) / d;
+
+        Point O = new Point(ux, uy);
+
+        double R = dist(O, A);
+
+        double[] ang = new double[3];
+        ang[0] = Math.atan2(A.y - uy, A.x - ux);
+        ang[1] = Math.atan2(B.y - uy, B.x - ux);
+        ang[2] = Math.atan2(C.y - uy, C.x - ux);
+
+        Arrays.sort(ang);
+
+        double[] arc = new double[3];
+        arc[0] = ang[1] - ang[0];
+        arc[1] = ang[2] - ang[1];
+        arc[2] = 2 * PI - arc[0] - arc[1];
+
+        int n = 3;
+
+        outer:
+        for (n = 3; n <= 100; n++) {
+            double step = 2 * PI / n;
+
+            for (int i = 0; i < 3; i++) {
+                double k = arc[i] / step;
+                if (Math.abs(k - Math.round(k)) > EPS)
+                    continue outer;
+            }
+            break;
+        }
+
+        double area = n * R * R * Math.sin(2 * PI / n) / 2.0;
+
+        System.out.printf("%.10f\n", area);
+    }
+}

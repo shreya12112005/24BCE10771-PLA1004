@@ -1,0 +1,86 @@
+import java.util.Scanner;
+
+public class Main {
+
+    // Check if string is in RXCY format
+    static boolean isRXCY(String s) {
+        if (s.charAt(0) != 'R') return false;
+
+        int cPos = s.indexOf('C');
+        if (cPos == -1) return false;
+
+        // Characters between R and C must all be digits
+        if (cPos == 1) return false;
+
+        for (int i = 1; i < cPos; i++) {
+            if (!Character.isDigit(s.charAt(i)))
+                return false;
+        }
+
+        // Characters after C must all be digits
+        if (cPos == s.length() - 1) return false;
+
+        for (int i = cPos + 1; i < s.length(); i++) {
+            if (!Character.isDigit(s.charAt(i)))
+                return false;
+        }
+
+        return true;
+    }
+
+    // Convert column number to Excel letters
+    static String numberToColumn(int num) {
+        StringBuilder sb = new StringBuilder();
+
+        while (num > 0) {
+            num--;
+            sb.append((char) ('A' + (num % 26)));
+            num /= 26;
+        }
+
+        return sb.reverse().toString();
+    }
+
+    // Convert Excel letters to column number
+    static int columnToNumber(String col) {
+        int num = 0;
+
+        for (int i = 0; i < col.length(); i++) {
+            num = num * 26 + (col.charAt(i) - 'A' + 1);
+        }
+
+        return num;
+    }
+
+    public static void main(String[] args) {
+        Scanner sc = new Scanner(System.in);
+
+        int n = sc.nextInt();
+
+        while (n-- > 0) {
+            String s = sc.next();
+
+            if (isRXCY(s)) {
+                int cPos = s.indexOf('C');
+
+                int row = Integer.parseInt(s.substring(1, cPos));
+                int col = Integer.parseInt(s.substring(cPos + 1));
+
+                System.out.println(numberToColumn(col) + row);
+
+            } else {
+                int i = 0;
+                while (Character.isLetter(s.charAt(i))) i++;
+
+                String colLetters = s.substring(0, i);
+                int row = Integer.parseInt(s.substring(i));
+
+                int col = columnToNumber(colLetters);
+
+                System.out.println("R" + row + "C" + col);
+            }
+        }
+
+        sc.close();
+    }
+}

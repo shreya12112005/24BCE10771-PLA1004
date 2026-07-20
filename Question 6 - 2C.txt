@@ -1,0 +1,102 @@
+import java.util.Scanner;
+
+public class Main {
+    public static void main(String[] args) {
+        Scanner sc = new Scanner(System.in);
+        double x1 = sc.nextDouble(), y1 = sc.nextDouble(), r1 = sc.nextDouble();
+        double x2 = sc.nextDouble(), y2 = sc.nextDouble(), r2 = sc.nextDouble();
+        double x3 = sc.nextDouble(), y3 = sc.nextDouble(), r3 = sc.nextDouble();
+        sc.close();
+
+        // Linear equations from subtracting (1)-(2) and (1)-(3)
+        double a1 = 2 * (x2 - x1);
+        double b1 = 2 * (y2 - y1);
+        double c1 = x1 * x1 + y1 * y1 - x2 * x2 - y2 * y2;
+        double d1 = r1 * r1 - r2 * r2;
+
+        double a2 = 2 * (x3 - x1);
+        double b2 = 2 * (y3 - y1);
+        double c2 = x1 * x1 + y1 * y1 - x3 * x3 - y3 * y3;
+        double d2 = r1 * r1 - r3 * r3;
+
+        double D = a1 * b2 - a2 * b1;
+        // D should not be zero because centers are not collinear
+        if (Math.abs(D) < 1e-12) {
+            // fallback: print nothing
+            return;
+        }
+
+        // Express x and y as linear functions of s = k^2
+        double Xs = (d1 * b2 - d2 * b1) / D;
+        double Xc = (c2 * b1 - c1 * b2) / D;
+        double Ys = (a1 * d2 - a2 * d1) / D;
+        double Yc = (a2 * c1 - a1 * c2) / D;
+
+        // Quadratic in s: A*s^2 + B*s + C = 0
+        double A = Xs * Xs + Ys * Ys;
+        double B = 2 * (Xs * (Xc - x1) + Ys * (Yc - y1)) - r1 * r1;
+        double C = (Xc - x1) * (Xc - x1) + (Yc - y1) * (Yc - y1);
+
+        double bestX = 0, bestY = 0;
+        double bestS = Double.POSITIVE_INFINITY;
+        boolean found = false;
+
+        // Solve quadratic
+        double[] roots = new double[2];
+        int rootCount = 0;
+        if (Math.abs(A) < 1e-12) {
+            // Linear case
+            if (Math.abs(B) > 1e-12) {
+                roots[0] = -C / B;
+                rootCount = 1;
+            }
+        } else {
+            double disc = B * B - 4 * A * C;
+            if (disc >= 0) {
+                double sqrtDisc = Math.sqrt(disc);
+                roots[0] = (-B - sqrtDisc) / (2 * A);
+                roots[1] = (-B + sqrtDisc) / (2 * A);
+                rootCount = 2;
+            }
+        }
+
+        // Check each root
+        for (int i = 0; i < rootCount; i++) {
+            double s = roots[i];
+            // s must be > 1 (outside all circles) and positive
+            if (s <= 1 + 1e-9) continue;
+            double x = s * Xs + Xc;
+            double y = s * Ys + Yc;
+
+            // Compute distances squared
+            double d1sq = (x - x1) * (x - x1) + (y - y1) * (y - y1);
+            double d2sq = (x - x2) * (x - x2) + (y - y2) * (y - y2);
+            double d3sq = (x - x3) * (x - x3) + (y - y3) * (y - y3);
+
+            // Must be outside all circles
+            if (d1sq <= r1 * r1 + 1e-9) continue;
+            if (d2sq <= r2 * r2 + 1e-9) continue;
+            if (d3sq <= r3 * r3 + 1e-9) continue;
+
+            // Check equal angle condition (ratios of distances to radii)
+            double ratio1 = Math.sqrt(d1sq) / r1;
+            double ratio2 = Math.sqrt(d2sq) / r2;
+            double ratio3 = Math.sqrt(d3sq) / r3;
+            if (Math.abs(ratio1 - ratio2) > 1e-6) continue;
+            if (Math.abs(ratio1 - ratio3) > 1e-6) continue;
+
+            // We want the smallest s (largest angle)
+            if (s < bestS) {
+                bestS = s;
+                bestX = x;
+                bestY = y;
+                found = true;
+            }
+        }
+
+        if (found) {
+            System.out.printf("%.5f %.5f\n", bestX, bestY);
+        }
+        // else print nothing (blank)
+    }
+}
