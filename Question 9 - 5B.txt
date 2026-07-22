@@ -1,0 +1,49 @@
+import java.io.*;
+import java.util.*;
+
+public class Main {
+    public static void main(String[] args) throws Exception {
+        BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
+
+        List<String> lines = new ArrayList<>();
+        String s;
+        int maxLen = 0;
+
+        while ((s = br.readLine()) != null) {
+            lines.add(s);
+            maxLen = Math.max(maxLen, s.length());
+        }
+
+        String border = "*".repeat(maxLen + 2);
+        System.out.println(border);
+
+        boolean leftTurn = true;
+
+        for (String line : lines) {
+            int diff = maxLen - line.length();
+
+            int left, right;
+
+            if (diff % 2 == 0) {
+                left = right = diff / 2;
+            } else {
+                if (leftTurn) {
+                    left = diff / 2;
+                    right = diff / 2 + 1;
+                } else {
+                    left = diff / 2 + 1;
+                    right = diff / 2;
+                }
+                leftTurn = !leftTurn;
+            }
+
+            System.out.println("*"
+                    + " ".repeat(left)
+                    + line
+                    + " ".repeat(right)
+                    + "*");
+        }
+
+        System.out.println(border);
+    }
+}

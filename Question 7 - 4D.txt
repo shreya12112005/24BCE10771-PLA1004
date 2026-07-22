@@ -1,0 +1,89 @@
+import java.util.*;
+
+public class Main {
+
+    static class Envelope {
+        int w, h, idx;
+
+        Envelope(int w, int h, int idx) {
+            this.w = w;
+            this.h = h;
+            this.idx = idx;
+        }
+    }
+
+    public static void main(String[] args) {
+        Scanner sc = new Scanner(System.in);
+
+        int n = sc.nextInt();
+        int cardW = sc.nextInt();
+        int cardH = sc.nextInt();
+
+        ArrayList<Envelope> list = new ArrayList<>();
+
+        for (int i = 1; i <= n; i++) {
+            int w = sc.nextInt();
+            int h = sc.nextInt();
+
+            if (w > cardW && h > cardH) {
+                list.add(new Envelope(w, h, i));
+            }
+        }
+
+        int m = list.size();
+
+        if (m == 0) {
+            System.out.println(0);
+            return;
+        }
+
+        Collections.sort(list, (a, b) -> {
+            if (a.w == b.w)
+                return a.h - b.h;
+            return a.w - b.w;
+        });
+
+        int[] dp = new int[m];
+        int[] parent = new int[m];
+
+        Arrays.fill(dp, 1);
+        Arrays.fill(parent, -1);
+
+        int maxLen = 1;
+        int last = 0;
+
+        for (int i = 0; i < m; i++) {
+            for (int j = 0; j < i; j++) {
+
+                if (list.get(i).w > list.get(j).w &&
+                    list.get(i).h > list.get(j).h) {
+
+                    if (dp[j] + 1 > dp[i]) {
+                        dp[i] = dp[j] + 1;
+                        parent[i] = j;
+                    }
+                }
+            }
+
+            if (dp[i] > maxLen) {
+                maxLen = dp[i];
+                last = i;
+            }
+        }
+
+        ArrayList<Integer> chain = new ArrayList<>();
+
+        while (last != -1) {
+            chain.add(list.get(last).idx);
+            last = parent[last];
+        }
+
+        Collections.reverse(chain);
+
+        System.out.println(maxLen);
+
+        for (int x : chain) {
+            System.out.print(x + " ");
+        }
+    }
+}

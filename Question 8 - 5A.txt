@@ -1,0 +1,28 @@
+import java.io.*;
+
+public class Main {
+    public static void main(String[] args) throws Exception {
+        BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
+
+        String line;
+        int people = 0;
+        long traffic = 0;
+
+        while ((line = br.readLine()) != null) {
+
+            if (line.startsWith("+")) {
+                people++;
+            }
+            else if (line.startsWith("-")) {
+                people--;
+            }
+            else {
+                int pos = line.indexOf(':');
+                String message = line.substring(pos + 1);
+                traffic += (long) people * message.length();
+            }
+        }
+
+        System.out.println(traffic);
+    }
+}
