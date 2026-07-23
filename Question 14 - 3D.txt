@@ -1,0 +1,74 @@
+import java.io.*;
+import java.util.*;
+
+public class Main {
+
+    static class Node implements Comparable<Node> {
+        int gain;
+        int pos;
+
+        Node(int gain, int pos) {
+            this.gain = gain;
+            this.pos = pos;
+        }
+
+        public int compareTo(Node other) {
+            return other.gain - this.gain; // max heap
+        }
+    }
+
+    public static void main(String[] args) throws Exception {
+
+        BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
+
+        char[] s = br.readLine().toCharArray();
+
+        PriorityQueue<Node> pq = new PriorityQueue<>();
+
+        long cost = 0;
+        int balance = 0;
+        int idx = 0;
+
+        for (int i = 0; i < s.length; i++) {
+
+            if (s[i] == '(') {
+                balance++;
+            } else if (s[i] == ')') {
+                balance--;
+            } else {
+
+                StringTokenizer st = new StringTokenizer(br.readLine());
+
+                int open = Integer.parseInt(st.nextToken());
+                int close = Integer.parseInt(st.nextToken());
+
+                cost += close;
+                s[i] = ')';
+                balance--;
+
+                pq.add(new Node(close - open, i));
+            }
+
+            if (balance < 0) {
+                if (pq.isEmpty()) {
+                    System.out.println(-1);
+                    return;
+                }
+
+                Node cur = pq.poll();
+
+                s[cur.pos] = '(';
+                cost -= cur.gain;
+                balance += 2;
+            }
+        }
+
+        if (balance != 0) {
+            System.out.println(-1);
+            return;
+        }
+
+        System.out.println(cost);
+        System.out.println(new String(s));
+    }
+}
