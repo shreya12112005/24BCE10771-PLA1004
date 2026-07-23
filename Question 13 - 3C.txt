@@ -1,0 +1,79 @@
+import java.util.*;
+
+public class Main {
+
+    static char[][] board = new char[3][3];
+
+    static boolean win(char c) {
+        for (int i = 0; i < 3; i++) {
+            if (board[i][0] == c && board[i][1] == c && board[i][2] == c)
+                return true;
+            if (board[0][i] == c && board[1][i] == c && board[2][i] == c)
+                return true;
+        }
+
+        if (board[0][0] == c && board[1][1] == c && board[2][2] == c)
+            return true;
+
+        if (board[0][2] == c && board[1][1] == c && board[2][0] == c)
+            return true;
+
+        return false;
+    }
+
+    public static void main(String[] args) {
+
+        Scanner sc = new Scanner(System.in);
+
+        int x = 0;
+        int o = 0;
+
+        for (int i = 0; i < 3; i++) {
+            String s = sc.next();
+            for (int j = 0; j < 3; j++) {
+                board[i][j] = s.charAt(j);
+                if (board[i][j] == 'X')
+                    x++;
+                else if (board[i][j] == '0')
+                    o++;
+            }
+        }
+
+        boolean xWin = win('X');
+        boolean oWin = win('0');
+
+        // Illegal states
+        if (o > x || x > o + 1) {
+            System.out.println("illegal");
+            return;
+        }
+
+        if (xWin && oWin) {
+            System.out.println("illegal");
+            return;
+        }
+
+        if (xWin && x != o + 1) {
+            System.out.println("illegal");
+            return;
+        }
+
+        if (oWin && x != o) {
+            System.out.println("illegal");
+            return;
+        }
+
+        // Game results
+        if (xWin) {
+            System.out.println("the first player won");
+        } else if (oWin) {
+            System.out.println("the second player won");
+        } else if (x + o == 9) {
+            System.out.println("draw");
+        } else if (x == o) {
+            System.out.println("first");
+        } else {
+            System.out.println("second");
+        }
+    }
+}
