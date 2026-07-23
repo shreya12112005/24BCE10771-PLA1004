@@ -1,0 +1,82 @@
+import java.io.*;
+import java.util.*;
+
+public class Main {
+
+    static class Boat {
+        int power, index;
+
+        Boat(int power, int index) {
+            this.power = power;
+            this.index = index;
+        }
+    }
+
+    public static void main(String[] args) throws Exception {
+
+        BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
+        StringTokenizer st = new StringTokenizer(br.readLine());
+
+        int n = Integer.parseInt(st.nextToken());
+        int v = Integer.parseInt(st.nextToken());
+
+        ArrayList<Boat> one = new ArrayList<>();
+        ArrayList<Boat> two = new ArrayList<>();
+
+        for (int i = 1; i <= n; i++) {
+            st = new StringTokenizer(br.readLine());
+            int t = Integer.parseInt(st.nextToken());
+            int p = Integer.parseInt(st.nextToken());
+
+            if (t == 1)
+                one.add(new Boat(p, i));
+            else
+                two.add(new Boat(p, i));
+        }
+
+        one.sort((a, b) -> b.power - a.power);
+        two.sort((a, b) -> b.power - a.power);
+
+        long[] pre1 = new long[one.size() + 1];
+        long[] pre2 = new long[two.size() + 1];
+
+        for (int i = 1; i <= one.size(); i++)
+            pre1[i] = pre1[i - 1] + one.get(i - 1).power;
+
+        for (int i = 1; i <= two.size(); i++)
+            pre2[i] = pre2[i - 1] + two.get(i - 1).power;
+
+        long best = -1;
+        int bestOne = 0;
+        int bestTwo = 0;
+
+        for (int cnt2 = 0; cnt2 <= two.size(); cnt2++) {
+
+            long used = 2L * cnt2;
+            if (used > v)
+                break;
+
+            int cnt1 = (int) Math.min(one.size(), v - used);
+
+            long value = pre2[cnt2] + pre1[cnt1];
+
+            if (value > best) {
+                best = value;
+                bestOne = cnt1;
+                bestTwo = cnt2;
+            }
+        }
+
+        System.out.println(best);
+
+        StringBuilder ans = new StringBuilder();
+
+        for (int i = 0; i < bestTwo; i++)
+            ans.append(two.get(i).index).append(" ");
+
+        for (int i = 0; i < bestOne; i++)
+            ans.append(one.get(i).index).append(" ");
+
+        System.out.println(ans.toString().trim());
+    }
+}
