@@ -1,0 +1,45 @@
+import java.util.*;
+
+public class Main {
+    public static void main(String[] args) {
+        Scanner sc = new Scanner(System.in);
+
+        int d = sc.nextInt();
+        int sumTime = sc.nextInt();
+
+        int[] min = new int[d];
+        int[] max = new int[d];
+        int[] ans = new int[d];
+
+        int minSum = 0, maxSum = 0;
+
+        for (int i = 0; i < d; i++) {
+            min[i] = sc.nextInt();
+            max[i] = sc.nextInt();
+
+            minSum += min[i];
+            maxSum += max[i];
+        }
+
+        if (sumTime < minSum || sumTime > maxSum) {
+            System.out.println("NO");
+            return;
+        }
+
+        System.out.println("YES");
+
+        int remaining = sumTime - minSum;
+
+        for (int i = 0; i < d; i++) {
+            ans[i] = min[i];
+
+            int add = Math.min(remaining, max[i] - min[i]);
+            ans[i] += add;
+            remaining -= add;
+        }
+
+        for (int i = 0; i < d; i++) {
+            System.out.print(ans[i] + " ");
+        }
+    }
+}
