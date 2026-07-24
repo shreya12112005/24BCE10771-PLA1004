@@ -1,0 +1,49 @@
+import java.util.Scanner;
+
+public class Main {
+    public static void main(String[] args) {
+        Scanner sc = new Scanner(System.in);
+        double a = sc.nextDouble();
+        double v = sc.nextDouble();
+        double l = sc.nextDouble();
+        double d = sc.nextDouble();
+        double w = sc.nextDouble();
+        sc.close();
+
+        double D = d;          // distance to the sign
+        double L = l - d;      // distance after the sign
+
+        // Maximum feasible speed at the sign
+        double u = Math.min(w, Math.min(v, Math.sqrt(2 * a * D)));
+
+        // ---- Time before the sign (D) ----
+        double V = Math.sqrt((2 * a * D + u * u) / 2.0);
+        double t1;
+        if (V <= v) {
+            // accelerate to V then brake to u
+            t1 = (2 * V - u) / a;
+        } else {
+            // accelerate to v, cruise, then brake to u
+            double distAccelDecel = (2 * v * v - u * u) / (2 * a);
+            t1 = (2 * v - u) / a + (D - distAccelDecel) / v;
+        }
+
+        // ---- Time after the sign (L) ----
+        double t2;
+        if (u >= v) {
+            t2 = L / v;
+        } else {
+            double distToV = (v * v - u * u) / (2 * a);
+            if (L <= distToV) {
+                // never reach v
+                t2 = (Math.sqrt(u * u + 2 * a * L) - u) / a;
+            } else {
+                // accelerate to v, then cruise
+                t2 = (v - u) / a + (L - distToV) / v;
+            }
+        }
+
+        double total = t1 + t2;
+        System.out.printf("%.5f\n", total);
+    }
+}

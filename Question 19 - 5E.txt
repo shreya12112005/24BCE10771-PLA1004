@@ -1,0 +1,83 @@
+import java.io.*;
+import java.util.*;
+
+public class Main {
+    public static void main(String[] args) throws IOException {
+        BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
+        int n = Integer.parseInt(br.readLine().trim());
+        StringTokenizer st = new StringTokenizer(br.readLine());
+        long[] a = new long[n];
+        int maxIdx = 0;
+        long maxVal = Long.MIN_VALUE;
+        for (int i = 0; i < n; i++) {
+            a[i] = Long.parseLong(st.nextToken());
+            if (a[i] > maxVal) {
+                maxVal = a[i];
+                maxIdx = i;
+            }
+        }
+
+        // Rotate so that the maximum is at index 0
+        long[] b = new long[n];
+        b[0] = a[maxIdx];
+        for (int i = 1; i < n; i++) {
+            b[i] = a[(maxIdx + i) % n];
+        }
+
+        long ans = 0;
+
+        // --- Count visible pairs among the remaining (non‑max) hills ---
+        // Monotonic stack storing (height, count of equal heights)
+        long[] stackH = new long[n];
+        int[] stackCnt = new int[n];
+        int top = 0;
+
+        for (int i = 1; i < n; i++) {
+            long h = b[i];
+            int cnt = 1;
+
+            while (top > 0 && stackH[top - 1] < h) {
+                ans += stackCnt[top - 1];
+                top--;
+            }
+
+            if (top > 0 && stackH[top - 1] == h) {
+                ans += stackCnt[top - 1];
+                cnt += stackCnt[top - 1];
+                top--;
+                if (top > 0) ans++;
+            } else {
+                if (top > 0) ans++;
+            }
+
+            stackH[top] = h;
+            stackCnt[top] = cnt;
+            top++;
+        }
+
+        // --- Count pairs between the maximum and every other hill ---
+        // suffixMax[i] = max height among b[i+1 ... n-1], or -1 if empty
+        long[] suffixMax = new long[n];
+        suffixMax[n - 1] = -1;
+        for (int i = n - 2; i >= 1; i--) {
+            suffixMax[i] = Math.max(b[i + 1], suffixMax[i + 1]);
+        }
+
+        long visibleToMax = 0;
+        long leftMax = -1; // max height to the left of current position
+
+        for (int i = 1; i < n; i++) {
+            boolean leftOk = leftMax <= b[i];
+            boolean rightOk = (i == n - 1) ? true : suffixMax[i] <= b[i];
+
+            if (leftOk || rightOk) {
+                visibleToMax++;
+            }
+
+            if (b[i] > leftMax) leftMax = b[i];
+        }
+
+        ans += visibleToMax;
+        System.out.println(ans);
+    }
+}

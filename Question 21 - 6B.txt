@@ -1,0 +1,42 @@
+import java.util.HashSet;
+import java.util.Scanner;
+
+public class Main {
+    public static void main(String[] args) {
+        Scanner sc = new Scanner(System.in);
+        int n = sc.nextInt();
+        int m = sc.nextInt();
+        char c = sc.next().charAt(0);
+        char[][] grid = new char[n][m];
+        for (int i = 0; i < n; i++) {
+            String row = sc.next();
+            grid[i] = row.toCharArray();
+        }
+        sc.close();
+
+        HashSet<Character> deputies = new HashSet<>();
+
+        int[] dr = {-1, 1, 0, 0};
+        int[] dc = {0, 0, -1, 1};
+
+        for (int i = 0; i < n; i++) {
+            for (int j = 0; j < m; j++) {
+                if (grid[i][j] == c) {
+                    // check four directions
+                    for (int dir = 0; dir < 4; dir++) {
+                        int ni = i + dr[dir];
+                        int nj = j + dc[dir];
+                        if (ni >= 0 && ni < n && nj >= 0 && nj < m) {
+                            char neighbor = grid[ni][nj];
+                            if (neighbor != '.' && neighbor != c) {
+                                deputies.add(neighbor);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        System.out.println(deputies.size());
+    }
+}
