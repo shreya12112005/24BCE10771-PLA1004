@@ -1,0 +1,86 @@
+import java.util.*;
+
+public class Main {
+    static int n, a, b;
+    static int[] h;
+    static int MAX = 30;
+    static int INF = 1_000_000_000;
+    static int[][][] dp;
+    static int[][][] bestX;
+
+    public static void main(String[] args) {
+        Scanner sc = new Scanner(System.in);
+        n = sc.nextInt();
+        a = sc.nextInt();
+        b = sc.nextInt();
+        h = new int[n];
+        for (int i = 0; i < n; i++) h[i] = sc.nextInt();
+        sc.close();
+
+        dp = new int[n][17][17];
+        bestX = new int[n][17][17];
+        for (int i = 0; i < n; i++)
+            for (int j = 0; j < 17; j++) {
+                Arrays.fill(dp[i][j], -1);
+                Arrays.fill(bestX[i][j], -1);
+            }
+
+        int total = solve(1, h[0], h[1]);
+
+        List<Integer> shots = new ArrayList<>();
+        int i = 1;
+        int hpPrev = h[0];
+        int hpCur = h[1];
+        while (i <= n - 2) {
+            int pi = hpPrev + 1;
+            int ci = hpCur + 1;
+            int x = bestX[i][pi][ci];
+            for (int k = 0; k < x; k++) shots.add(i + 1);  // 1‑based index
+
+            if (i == n - 2) break;
+
+            hpPrev = hpCur - a * x;
+            if (hpPrev < -1) hpPrev = -1;
+            hpCur = h[i + 1] - b * x;
+            if (hpCur < -1) hpCur = -1;
+            i++;
+        }
+
+        System.out.println(shots.size());
+        for (int idx : shots) System.out.print(idx + " ");
+        if (!shots.isEmpty()) System.out.println();
+    }
+
+    static int solve(int i, int hpPrev, int hpCur) {
+        if (i > n - 2) return 0;
+        int pi = hpPrev + 1;
+        int ci = hpCur + 1;
+        if (dp[i][pi][ci] != -1) return dp[i][pi][ci];
+
+        int best = INF;
+        for (int x = 0; x <= MAX; x++) {
+            if (hpPrev - b * x >= 0) continue; // must kill previous archer
+
+            if (i == n - 2) {
+                if (hpCur - a * x < 0 && h[n - 1] - b * x < 0) {
+                    best = x;
+                    bestX[i][pi][ci] = x;
+                    break; // smallest x is optimal here
+                }
+            } else {
+                int newCur = hpCur - a * x;
+                if (newCur < -1) newCur = -1;
+                int nextHpCur = h[i + 1] - b * x;
+                if (nextHpCur < -1) nextHpCur = -1;
+
+                int val = x + solve(i + 1, newCur, nextHpCur);
+                if (val < best) {
+                    best = val;
+                    bestX[i][pi][ci] = x;
+                }
+            }
+        }
+        dp[i][pi][ci] = best;
+        return best;
+    }
+}

@@ -1,0 +1,86 @@
+import java.util.*;
+
+public class Main {
+    static int n;
+    static int[] h;
+    static int[] maxTree, minTree;
+
+    static void build(int node, int l, int r) {
+        if (l == r) {
+            maxTree[node] = minTree[node] = h[l];
+            return;
+        }
+        int mid = (l + r) / 2;
+        build(node * 2, l, mid);
+        build(node * 2 + 1, mid + 1, r);
+        maxTree[node] = Math.max(maxTree[node * 2], maxTree[node * 2 + 1]);
+        minTree[node] = Math.min(minTree[node * 2], minTree[node * 2 + 1]);
+    }
+
+    static int queryMax(int node, int l, int r, int ql, int qr) {
+        if (ql <= l && r <= qr) return maxTree[node];
+        int mid = (l + r) / 2;
+        int res = Integer.MIN_VALUE;
+        if (ql <= mid) res = Math.max(res, queryMax(node * 2, l, mid, ql, qr));
+        if (qr > mid) res = Math.max(res, queryMax(node * 2 + 1, mid + 1, r, ql, qr));
+        return res;
+    }
+
+    static int queryMin(int node, int l, int r, int ql, int qr) {
+        if (ql <= l && r <= qr) return minTree[node];
+        int mid = (l + r) / 2;
+        int res = Integer.MAX_VALUE;
+        if (ql <= mid) res = Math.min(res, queryMin(node * 2, l, mid, ql, qr));
+        if (qr > mid) res = Math.min(res, queryMin(node * 2 + 1, mid + 1, r, ql, qr));
+        return res;
+    }
+
+    public static void main(String[] args) {
+        Scanner sc = new Scanner(System.in);
+        n = sc.nextInt();
+        int k = sc.nextInt();
+        h = new int[n];
+        for (int i = 0; i < n; i++) h[i] = sc.nextInt();
+
+        // ---------- First pass: find the maximum valid length ----------
+        Deque<Integer> maxDeque = new ArrayDeque<>();
+        Deque<Integer> minDeque = new ArrayDeque<>();
+        int L = 0;
+        int maxLen = 0;
+
+        for (int R = 0; R < n; R++) {
+            while (!maxDeque.isEmpty() && h[maxDeque.peekLast()] <= h[R]) maxDeque.pollLast();
+            maxDeque.offerLast(R);
+            while (!minDeque.isEmpty() && h[minDeque.peekLast()] >= h[R]) minDeque.pollLast();
+            minDeque.offerLast(R);
+
+            while (h[maxDeque.peekFirst()] - h[minDeque.peekFirst()] > k) {
+                if (maxDeque.peekFirst() == L) maxDeque.pollFirst();
+                if (minDeque.peekFirst() == L) minDeque.pollFirst();
+                L++;
+            }
+            maxLen = Math.max(maxLen, R - L + 1);
+        }
+
+        // ---------- Second pass: collect all intervals of length maxLen ----------
+        maxTree = new int[4 * n];
+        minTree = new int[4 * n];
+        build(1, 0, n - 1);
+
+        List<int[]> intervals = new ArrayList<>();
+        for (int i = 0; i + maxLen - 1 < n; i++) {
+            int left = i;
+            int right = i + maxLen - 1;
+            int mx = queryMax(1, 0, n - 1, left, right);
+            int mn = queryMin(1, 0, n - 1, left, right);
+            if (mx - mn <= k) {
+                intervals.add(new int[]{i + 1, i + maxLen}); // 1‑based indices
+            }
+        }
+
+        System.out.println(maxLen + " " + intervals.size());
+        for (int[] p : intervals) {
+            System.out.println(p[0] + " " + p[1]);
+        }
+    }
+}

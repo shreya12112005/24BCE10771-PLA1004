@@ -1,0 +1,81 @@
+import java.util.Scanner;
+
+public class Main {
+    public static void main(String[] args) {
+        Scanner sc = new Scanner(System.in);
+        char[][] board = new char[8][8];
+        for (int i = 0; i < 8; i++) {
+            String line = sc.next();
+            board[i] = line.toCharArray();
+        }
+        sc.close();
+
+        // fullRow[i] = true if row i is completely black
+        // fullCol[j] = true if column j is completely black
+        boolean[] fullRow = new boolean[8];
+        boolean[] fullCol = new boolean[8];
+        for (int i = 0; i < 8; i++) {
+            boolean rowAllBlack = true;
+            for (int j = 0; j < 8; j++) {
+                if (board[i][j] == 'W') {
+                    rowAllBlack = false;
+                    break;
+                }
+            }
+            fullRow[i] = rowAllBlack;
+        }
+        for (int j = 0; j < 8; j++) {
+            boolean colAllBlack = true;
+            for (int i = 0; i < 8; i++) {
+                if (board[i][j] == 'W') {
+                    colAllBlack = false;
+                    break;
+                }
+            }
+            fullCol[j] = colAllBlack;
+        }
+
+        int answer = Integer.MAX_VALUE;
+
+        // Try every subset of rows (0..255)
+        for (int mask = 0; mask < (1 << 8); mask++) {
+            boolean valid = true;
+            // Check that every selected row is fully black
+            for (int i = 0; i < 8; i++) {
+                if ((mask & (1 << i)) != 0 && !fullRow[i]) {
+                    valid = false;
+                    break;
+                }
+            }
+            if (!valid) continue;
+
+            // Determine forced columns: any black cell in an unselected row forces its column
+            boolean[] forcedCol = new boolean[8];
+            for (int j = 0; j < 8; j++) {
+                for (int i = 0; i < 8; i++) {
+                    if ((mask & (1 << i)) == 0 && board[i][j] == 'B') {
+                        forcedCol[j] = true;
+                        break;
+                    }
+                }
+            }
+
+            // Check that every forced column is fully black
+            for (int j = 0; j < 8; j++) {
+                if (forcedCol[j] && !fullCol[j]) {
+                    valid = false;
+                    break;
+                }
+            }
+            if (!valid) continue;
+
+            int strokes = Integer.bitCount(mask);
+            for (int j = 0; j < 8; j++) {
+                if (forcedCol[j]) strokes++;
+            }
+            answer = Math.min(answer, strokes);
+        }
+
+        System.out.println(answer);
+    }
+}
