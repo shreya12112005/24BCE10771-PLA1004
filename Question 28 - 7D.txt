@@ -1,0 +1,60 @@
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
+
+public class Main {
+    public static void main(String[] args) throws Exception {
+        BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
+        char[] s = br.readLine().toCharArray();
+        br.close();
+
+        int n = s.length;
+
+        // d1[i] -> odd palindrome radius count centered at i
+        int[] d1 = new int[n];
+        for (int i = 0, l = 0, r = -1; i < n; i++) {
+            int k = (i > r) ? 1 : Math.min(d1[l + r - i], r - i + 1);
+            while (i - k >= 0 && i + k < n && s[i - k] == s[i + k]) k++;
+            d1[i] = k;
+            if (i + k - 1 > r) {
+                l = i - k + 1;
+                r = i + k - 1;
+            }
+        }
+
+        // d2[i] -> even palindrome radius count centered between i-1 and i
+        int[] d2 = new int[n];
+        for (int i = 0, l = 0, r = -1; i < n; i++) {
+            int k = (i > r) ? 0 : Math.min(d2[l + r - i + 1], r - i + 1);
+            while (i + k < n && i - k - 1 >= 0 && s[i + k] == s[i - k - 1]) k++;
+            d2[i] = k;
+            if (i + k - 1 > r) {
+                l = i - k;
+                r = i + k - 1;
+            }
+        }
+
+        byte[] deg = new byte[n + 1];
+        long answer = 0;
+
+        for (int len = 1; len <= n; len++) {
+            boolean palindrome;
+
+            if ((len & 1) == 1) {
+                int center = len / 2;
+                int need = len / 2 + 1;
+                palindrome = d1[center] >= need;
+            } else {
+                int center = len / 2;
+                int need = len / 2;
+                palindrome = d2[center] >= need;
+            }
+
+            if (palindrome) {
+                deg[len] = (byte) (deg[len / 2] + 1);
+                answer += deg[len];
+            }
+        }
+
+        System.out.println(answer);
+    }
+}

@@ -1,0 +1,257 @@
+import java.io.*;
+import java.util.*;
+
+public class Main {
+    static class Node {}
+    static class Leaf extends Node { String value; Leaf(String v) { value = v; } }
+    static class MacroRef extends Node { String name; MacroRef(String n) { name = n; } }
+    static class BinOp extends Node { char op; Node left, right; BinOp(char o, Node l, Node r) { op = o; left = l; right = r; } }
+    static class Paren extends Node { Node inner; Paren(Node i) { inner = i; } }
+
+    static class Macro {
+        String name;
+        String expr;
+        Node ast;
+        int prec;             // 3 = leaf (safe), 1 = +/-, 2 = *//
+        char op;
+        boolean outerParens;
+    }
+
+    static Map<String, Macro> macros = new HashMap<>();
+
+    // Cache for macro safety: macro name -> context -> result
+    static class Context {
+        Character parentOp; // null if no parent
+        Character side;     // 'L', 'R', or null
+        Context(Character p, Character s) { parentOp = p; side = s; }
+        @Override
+        public boolean equals(Object o) {
+            if (!(o instanceof Context)) return false;
+            Context c = (Context) o;
+            return Objects.equals(parentOp, c.parentOp) && Objects.equals(side, c.side);
+        }
+        @Override
+        public int hashCode() {
+            return Objects.hash(parentOp, side);
+        }
+    }
+    static Map<String, Map<Context, Boolean>> cache = new HashMap<>();
+
+    public static void main(String[] args) throws IOException {
+        BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
+        int n = Integer.parseInt(br.readLine().trim());
+        for (int i = 0; i < n; i++) {
+            String line = br.readLine();
+            String[] parts = line.trim().split("\\s+");
+            int defIdx = -1;
+            for (int j = 0; j < parts.length; j++) {
+                if (parts[j].contains("define")) { defIdx = j; break; }
+            }
+            String name = parts[defIdx + 1];
+            StringBuilder exprSb = new StringBuilder();
+            for (int j = defIdx + 2; j < parts.length; j++) exprSb.append(parts[j]);
+            String expr = exprSb.toString();
+
+            Macro m = new Macro();
+            m.name = name;
+            m.expr = expr;
+            m.outerParens = hasOuterParens(expr);
+
+            List<String> tokens = tokenize(expr);
+            Node ast = parseExpr(tokens);
+            m.ast = ast;
+
+            if (m.outerParens) {
+                m.prec = 3;
+                m.op = 0;
+            } else {
+                int[] precOp = getPrecOp(ast);
+                m.prec = precOp[0];
+                m.op = (char) precOp[1];
+            }
+            macros.put(name, m);
+        }
+
+        // Final expression
+        String lastLine = br.readLine();
+        String[] partsFinal = lastLine.trim().split("\\s+");
+        StringBuilder finalExpr = new StringBuilder();
+        for (String p : partsFinal) finalExpr.append(p);
+        List<String> tokensFinal = tokenize(finalExpr.toString());
+        Node finalAST = parseExpr(tokensFinal);
+
+        boolean ok = checkNode(finalAST, null, null);
+        System.out.println(ok ? "OK" : "Suspicious");
+    }
+
+    // Correctly detects if the whole string is wrapped by one or more pairs of parentheses
+    static boolean hasOuterParens(String s) {
+        String t = s;
+        while (t.length() >= 2 && t.charAt(0) == '(' && t.charAt(t.length() - 1) == ')') {
+            // Find the matching ')' for the first '('
+            int bal = 0;
+            int match = -1;
+            for (int i = 0; i < t.length(); i++) {
+                char c = t.charAt(i);
+                if (c == '(') bal++;
+                else if (c == ')') {
+                    bal--;
+                    if (bal == 0) {
+                        match = i;
+                        break;
+                    }
+                }
+            }
+            // If the matching ')' is not the last character, these parentheses are not an outer pair
+            if (match != t.length() - 1) break;
+            t = t.substring(1, t.length() - 1);
+        }
+        return !t.equals(s);
+    }
+
+    static List<String> tokenize(String s) {
+        List<String> tokens = new ArrayList<>();
+        int i = 0;
+        while (i < s.length()) {
+            char c = s.charAt(i);
+            if (c == '(' || c == ')' || c == '+' || c == '-' || c == '*' || c == '/') {
+                tokens.add("" + c);
+                i++;
+            } else if (Character.isDigit(c)) {
+                StringBuilder num = new StringBuilder();
+                while (i < s.length() && Character.isDigit(s.charAt(i))) {
+                    num.append(s.charAt(i));
+                    i++;
+                }
+                tokens.add(num.toString());
+            } else if (Character.isLetter(c)) {
+                StringBuilder id = new StringBuilder();
+                while (i < s.length() && Character.isLetter(s.charAt(i))) {
+                    id.append(s.charAt(i));
+                    i++;
+                }
+                tokens.add(id.toString());
+            } else {
+                i++;
+            }
+        }
+        return tokens;
+    }
+
+    static Node parseExpr(List<String> tokens) {
+        int[] pos = {0};
+        return parseAddSub(tokens, pos);
+    }
+
+    static Node parseAddSub(List<String> tokens, int[] pos) {
+        Node left = parseMulDiv(tokens, pos);
+        while (pos[0] < tokens.size() && (tokens.get(pos[0]).equals("+") || tokens.get(pos[0]).equals("-"))) {
+            String op = tokens.get(pos[0]);
+            pos[0]++;
+            Node right = parseMulDiv(tokens, pos);
+            left = new BinOp(op.charAt(0), left, right);
+        }
+        return left;
+    }
+
+    static Node parseMulDiv(List<String> tokens, int[] pos) {
+        Node left = parseFactor(tokens, pos);
+        while (pos[0] < tokens.size() && (tokens.get(pos[0]).equals("*") || tokens.get(pos[0]).equals("/"))) {
+            String op = tokens.get(pos[0]);
+            pos[0]++;
+            Node right = parseFactor(tokens, pos);
+            left = new BinOp(op.charAt(0), left, right);
+        }
+        return left;
+    }
+
+    static Node parseFactor(List<String> tokens, int[] pos) {
+        String tok = tokens.get(pos[0]);
+        if (tok.equals("(")) {
+            pos[0]++;
+            Node node = parseAddSub(tokens, pos);
+            if (pos[0] < tokens.size() && tokens.get(pos[0]).equals(")")) {
+                pos[0]++;
+            }
+            return new Paren(node);
+        }
+        pos[0]++;
+        if (tok.matches("\\d+")) {
+            return new Leaf(tok);
+        } else {
+            if (macros.containsKey(tok)) {
+                return new MacroRef(tok);
+            } else {
+                return new Leaf(tok);
+            }
+        }
+    }
+
+    static int[] getPrecOp(Node node) {
+        if (node instanceof Paren) {
+            return getPrecOp(((Paren) node).inner);
+        }
+        if (node instanceof Leaf) return new int[]{3, 0};
+        if (node instanceof MacroRef) {
+            Macro m = macros.get(((MacroRef) node).name);
+            return new int[]{m.prec, m.op};
+        }
+        if (node instanceof BinOp) {
+            BinOp b = (BinOp) node;
+            int prec = (b.op == '+' || b.op == '-') ? 1 : 2;
+            return new int[]{prec, b.op};
+        }
+        return new int[]{3, 0};
+    }
+
+    static boolean checkNode(Node node, Character parentOp, Character side) {
+        if (node == null) return true;
+        if (node instanceof Leaf) return true;
+
+        if (node instanceof Paren) {
+            // Parentheses reset the surrounding context
+            return checkNode(((Paren) node).inner, null, null);
+        }
+
+        if (node instanceof MacroRef) {
+            Macro m = macros.get(((MacroRef) node).name);
+            Context ctx = new Context(parentOp, side);
+            Map<Context, Boolean> macroCache = cache.computeIfAbsent(m.name, k -> new HashMap<>());
+            if (macroCache.containsKey(ctx)) {
+                return macroCache.get(ctx);
+            }
+
+            boolean result;
+            if (m.prec == 3) {
+                // Macro is protected by outer parentheses – safe here, but check its body independently
+                result = checkNode(m.ast, null, null);
+            } else {
+                if (parentOp != null && needParens(parentOp, m.prec, side)) {
+                    result = false;
+                } else {
+                    result = checkNode(m.ast, parentOp, side);
+                }
+            }
+            macroCache.put(ctx, result);
+            return result;
+        }
+
+        if (node instanceof BinOp) {
+            BinOp b = (BinOp) node;
+            return checkNode(b.left, b.op, 'L') && checkNode(b.right, b.op, 'R');
+        }
+
+        return true;
+    }
+
+    static boolean needParens(char parentOp, int childPrec, Character side) {
+        int parentPrec = (parentOp == '+' || parentOp == '-') ? 1 : 2;
+        if (childPrec > parentPrec) return false;
+        if (childPrec < parentPrec) return true;
+        // same precedence
+        if (parentOp == '+' || parentOp == '*') return false;
+        // '-' or '/'
+        if (side == 'L') return false;
+        return true;
+    }
+}

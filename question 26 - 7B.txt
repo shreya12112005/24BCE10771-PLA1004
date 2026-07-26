@@ -1,0 +1,101 @@
+import java.util.*;
+
+public class Main {
+    static class Block {
+        int id, start, size;
+        Block(int id, int start, int size) {
+            this.id = id;
+            this.start = start;
+            this.size = size;
+        }
+    }
+
+    static int m;
+    static int[] mem;
+    static List<Block> blocks = new ArrayList<>();
+    static int nextId = 1;
+
+    public static void main(String[] args) {
+        Scanner sc = new Scanner(System.in);
+        int t = sc.nextInt();
+        m = sc.nextInt();
+        mem = new int[m]; // 0 = free, >0 = block id
+
+        for (int i = 0; i < t; i++) {
+            String op = sc.next();
+            if (op.equals("alloc")) {
+                int n = sc.nextInt();
+                alloc(n);
+            } else if (op.equals("erase")) {
+                int x = sc.nextInt();
+                erase(x);
+            } else if (op.equals("defragment")) {
+                defragment();
+            }
+        }
+        sc.close();
+    }
+
+    static int findFree(int n) {
+        int i = 0;
+        while (i < m) {
+            if (mem[i] == 0) {
+                int start = i;
+                int len = 0;
+                while (i < m && mem[i] == 0) {
+                    len++;
+                    i++;
+                }
+                if (len >= n) return start;
+            } else {
+                i++;
+            }
+        }
+        return -1;
+    }
+
+    static void alloc(int n) {
+        int start = findFree(n);
+        if (start == -1) {
+            System.out.println("NULL");
+            return;
+        }
+        int id = nextId++;
+        for (int i = start; i < start + n; i++) mem[i] = id;
+        blocks.add(new Block(id, start, n));
+        System.out.println(id);
+    }
+
+    static void erase(int x) {
+        Block found = null;
+        int idx = -1;
+        for (int i = 0; i < blocks.size(); i++) {
+            if (blocks.get(i).id == x) {
+                found = blocks.get(i);
+                idx = i;
+                break;
+            }
+        }
+        if (found == null) {
+            System.out.println("ILLEGAL_ERASE_ARGUMENT");
+            return;
+        }
+        // free memory
+        for (int i = found.start; i < found.start + found.size; i++) mem[i] = 0;
+        blocks.remove(idx);
+    }
+
+    static void defragment() {
+        if (blocks.isEmpty()) return;
+        blocks.sort(Comparator.comparingInt(b -> b.start));
+        Arrays.fill(mem, 0);
+        int cur = 0;
+        for (Block b : blocks) {
+            b.start = cur;
+            for (int i = 0; i < b.size; i++) {
+                mem[cur + i] = b.id;
+            }
+            cur += b.size;
+        }
+    }
+}

@@ -1,0 +1,46 @@
+import java.util.Scanner;
+
+public class Main {
+    // Extended Euclidean algorithm: returns {g, x, y} such that a*x + b*y = g
+    private static long[] egcd(long a, long b) {
+        if (b == 0) {
+            return new long[]{a, 1, 0};
+        }
+        long[] vals = egcd(b, a % b);
+        long g = vals[0];
+        long x1 = vals[1];
+        long y1 = vals[2];
+        return new long[]{g, y1, x1 - (a / b) * y1};
+    }
+
+    public static void main(String[] args) {
+        Scanner sc = new Scanner(System.in);
+        long A = sc.nextLong();
+        long B = sc.nextLong();
+        long C = sc.nextLong();
+        sc.close();
+
+        long a = Math.abs(A);
+        long b = Math.abs(B);
+        long[] res = egcd(a, b);
+        long g = res[0];
+        long x0 = res[1];
+        long y0 = res[2];
+
+        long rhs = -C;
+        if (rhs % g != 0) {
+            System.out.println("-1");
+            return;
+        }
+
+        long scale = rhs / g;
+        long x = x0 * scale;
+        long y = y0 * scale;
+
+        if (A < 0) x = -x;
+        if (B < 0) y = -y;
+
+        // Coordinates are guaranteed to be within [-5e18, 5e18] for given constraints
+        System.out.println(x + " " + y);
+    }
+}
