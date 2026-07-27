@@ -1,0 +1,37 @@
+import java.util.*;
+
+public class Main {
+
+    static boolean check(String route, String first, String second) {
+        int pos1 = route.indexOf(first);
+
+        if (pos1 == -1)
+            return false;
+
+        int pos2 = route.indexOf(second, pos1 + first.length());
+
+        return pos2 != -1;
+    }
+
+    public static void main(String[] args) {
+        Scanner sc = new Scanner(System.in);
+
+        String route = sc.next();
+        String first = sc.next();
+        String second = sc.next();
+
+        boolean forward = check(route, first, second);
+
+        String reversed = new StringBuilder(route).reverse().toString();
+        boolean backward = check(reversed, first, second);
+
+        if (forward && backward)
+            System.out.println("both");
+        else if (forward)
+            System.out.println("forward");
+        else if (backward)
+            System.out.println("backward");
+        else
+            System.out.println("fantasy");
+    }
+}
